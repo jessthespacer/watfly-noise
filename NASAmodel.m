@@ -20,10 +20,10 @@ function SPL = getNoise(shp, B, D, RPM, r, verbose = false, warn = false)
 	SPL = 0;
 
 	% Define speed of sound [ft/s]
-	global c = 1125;
+	c = 1125;
 
 	% Distance from radial reference point to prop disc [ft]
-	global Z = 1;
+	Z = 1;
 
 	% Calculate reference level L1 (digitization of Fig. B-2)
 	L1 = @(shp) 14.26810079692784 * log10(shp) + 86.48677507603948;
