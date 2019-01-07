@@ -9,6 +9,260 @@
 % Appendix D. Some variable names have changed and code has been vectorized
 % where possible.
 
+% Subroutine AMIN
+function amin_a = amin(a)
+	% Defines curve fit corresponding to a-curve for minimum allowed Re
+	x1 = abs(a);
+	if x1 <= 0.204
+		amin_a = sqrt(67.552 - 886.788 * x1^2) - 8.219;
+	elseif x1 <= 0.244
+		amin_a = -32.665 * x1 + 3.981;
+	else
+		amin_a = -142.795 * x1^3 + 103.656 * x1^2 - 57.757 * x1 + 6.006;
+	end
+end
+
+% Suburoutine AMAX
+function amax_a = amax(a)
+	% Defines curve fit corresponding to a-curve for maximum allowed Re
+	x1 = abs(a);
+	if x1 <= 0.13
+		amax_a = sqrt(67.552 - 886.788 * x1^2) - 8.219;
+	elseif x1 <= 0.321
+		amax_a = -15.901 * x1 + 1.098;
+	else
+		amax_a = -4.669 * x1^3 + 3.491 * x1^2 - 16.699 * x1 + 1.149;
+	end
+end
+
+% Subroutine BMIN
+function bmin_b = bmin(b)
+	% Defines curve fit corresponding to b-curve for minimum allowed Re
+	x1 = abs(b);
+	if x1 <= 0.13
+		bmin_b = sqrt(16.888 - 886.788 * x1^2) - 4.109;
+	elseif x1 <= 0.145
+		bmin_b = -83.607 * x1 + 8.138;
+	else
+		bmin_b = -817.81 * x1^3 + 355.21 * x1^2 - 135.024 * x1 + 10.619;
+	end
+end
+
+% Subroutine BMAX
+function bmax_b = bmax(b)
+	% Defines curve fit corresponding to b-curve for maximum allowed Re
+	x1 = abs(b);
+	if x1 <= 0.1
+		bmax_b = sqrt(16.888 - 886.788 * x1^2) - 4.109;
+	elseif x1 <= 0.187
+		bmax_b = -31.313 * x1 + 1.854;
+	else
+		bmax_b = -80.541 * x1^3 + 44.174 * x1^2 - 39.381 * x1 + 2.344;
+	end
+end
+
+% Subroutine A0COMP
+function a0 = a0comp(Re)
+	% Determines where the a-curve is -20 dB
+	if Re < 9.52E+04
+		a0 = 0.57;
+	elseif Re < 8.57E+05
+		a0 = -9.57E-13 * (Re - 8.57E+05)^2 + 1.13;
+	else
+		a0 = 1.13;
+	end
+end
+
+% Subroutine DIRECTH
+function Dbar_h = direct_h(M, Theta, Phi)
+	% Computes high frequency directivity function for a given observer
+	degrad = 0.017453;
+
+	Mc = 0.8 * M;
+	ThetaR = Theta * degrad;
+	PhiR = Phi * degrad;
+
+	Dbar_h = 2 * sin(ThetaR / 2)^2 * sin(PhiR)^2 / ...
+		((1 + M * cos(ThetaR)) * (1 + (M - Mc) * cos(ThetaR))^2);
+end
+
+% Subroutine DIRECTL
+function Dbar_l = direct_l(M, Theta, Phi)
+	% Computes low frequency directivity function for a given observer
+	degrad = 0.017453;
+
+	Mc = 0.8 * M;
+	ThetaR = Theta * degrad;
+	PhiR = Phi * degrad;
+
+	Dbar_l = (sin(ThetaR) * sin(PhiR))^2 / (1 + M * cos(ThetaR))^4;
+end
+
+% Subroutine blunt
+function G5 = G5comp(hdstar, eta)
+	if hdstar < 0.25
+		mu = 0.1211;
+	elseif hdstar <= 0.62
+		mu = -0.2175 * hdstar + 0.1755;
+	elseif hdstar < 1.15
+		mu = -0.0308 * hdstar + 0.0596;
+	else
+		mu = 0.0242;
+	end
+
+	if hdstar <= 0.02
+		M = 0.0;
+	elseif hdstar < 0.5
+		M = 68.724 * hdstar - 1.35;
+	elseif hdstar <= 0.62
+		M = 308.475 * hdstar - 121.23;
+	elseif hdstar <= 1.15
+		M = 224.811 * hdstar - 69.354;
+	elseif hdstar < 1.2
+		M = 1583.28 * hdstar - 1631.592;
+	else
+		M = 268.344;
+	end
+
+	if M < 0
+		M = 0;
+	end
+
+	eta0 = sqrt((M * M * mu^4) / (6.25 + M * M * mu * mu));
+
+	K = 2.5 * sqrt(1 - (eta0 / mu)^2) - 2.5 - M * eta0;
+
+	if eta <= eta0
+		G5 = M * eta + K;
+	elseif eta > eta0 && eta <= 0
+		G5 = 2.6 * sqrt(1 - (eta / mu)^2) - 2.5;
+	elseif eta > 0 && eta <= 0.03616
+		G5 = sqrt(1.5625 - 1194.99 * eta^2) - 1.25;
+	else
+		G5 = -155.543 * eta + 4.375;
+	end
+end
+
+% Subroutine THICK
+function [deltaP, dstrp, dstrs] = BL_thick(c, U, alpha_star, Itrip, c0, visc)
+	% Compute boundary layer thickness
+	M = U / c0;
+	Re = U * c / visc;
+
+	delta0 = 10^(1.6569 - 0.9045 * log10(Re) + 0.0596 * (log10(Re))^2) * c;
+
+	if Itrip == 2
+		delta0 *= 0.6;
+	end
+
+	% Compute pressure-side boundary layer thickness
+	deltaP = 10^(-0.04175 * alpha_star + 0.00106 * alpha_star^2) * delta0;
+
+	% Compute zero AOA displacement thickness
+	if Itrip == 1 || Itrip == 2
+		if Re <= 0.3E+06
+			dstr0 = 0.0601 * Re^(-0.114 * c);
+		else
+			dstr0 = 10^(3.411 - 1.5397 * log10(Re) + 0.1059 * (log10(Re))^2)*c;
+		end
+		if Itrip = 2
+			dstr0 *= 0.6;
+		end
+	else
+		dstr0 = 10^(3.0187 - 1.5397 * log10(Re) + 0.1059 * (log10(Re))^2) * c;
+	end
+
+	% Pressure side displacement thickness
+	dstrp = 10^(-0.0432 * alpha_star + 0.00113 * alpha_star^2) * dstr0;
+	if Itrip == 3
+		dstrp *= 1.48;
+	end
+
+	% Suction side displcement thickness
+	if Itrip == 1
+		if alpha_star <= 5
+			dstrs = 10^(0.0679 * alpha_star) * dstr0;
+		elseif alpha_star <= 12.5
+			dstrs = 0.381 * 10^(0.1516 * alpha_star) * dstr0;
+		else
+			dstrs = 14.296 * 10^(0.0258 * alpha_star) * dstr0;
+		end
+	else
+		if alpha_star <= 7.5
+			dstrs = 10^(0.0679 * alpha_star) * dstr0;
+		elseif alpha_star <= 12.5
+			dstrs = 0.0162 * 10^(0.3066 * alpha_star) * dstr0;
+		else
+			dstrs = 52.42 * 10^(0.0258 * alpha_star) * dstr0;
+		end
+	end
+end
+
+function SPL_BLUNT = blunt(alpha_star, c, U, f, Itrip, Theta, Phi, L, r, ...
+	h, Psi, visc, c0)
+	% Calculates SPL for blunt noise
+	SPL_BLUNT = zeros(size(f));
+	stppp = zeros(size(f));
+
+	M = U / c0;
+	Re = U * c / visc;
+
+	[deltaP, dstrp, dstrs] = BL_thick(c, U, alpha_star, Itrip, c0, visc);
+
+	% Compute average displacement thickness
+	dstravg = (dstrs + dstrp) / 2;
+	hdstar = h / dstravg;
+	dstarh = 1 / hdstar;
+
+	% Compute directivity function
+	Dbar_h = direct_h(M, Theta, Phi);
+
+	% Compute peak Strouhal number
+	aterm = 0.212 - 0.0045 * Psi;
+
+	if hdstar >= 0.2
+		stpeak = aterm / (1 + 0.235 * dstarh - 0.0132 * dstarh^2);
+	else
+		stpeak = 0.1 * hdstar + 0.095 - 0.00243 * Psi;
+	end
+
+	% Compute scaled spectrum level
+	if hdstar <= 5
+		G4 = 17.5 * log10(hdstar) + 157.5 - 1.114 * Psi;
+	else
+		G4 = 169.7 - 1.114 * Psi;
+	end
+
+	% For each frequency, compute spectrum shape referenced to 0 dB
+	for i = 1:size(f, 2)
+		% I think NASA just gave up trying to explain the code a long, long
+		% time ago...
+		stppp(i) = f(i) * h / U;
+		eta = log10(stppp(i) / stpeak);
+
+		hdstarl = hdstar;
+		G514 = G5comp(hdstarl, eta);
+		hdstarp = 6.724 * hdstar^2 - 4.019 * hdstar + 1.107;
+		G50 = G5comp(hdstarp, eta);
+
+		G5 = G50 + 0.0714 * Psi * (G514 - G50);
+
+		if G5 > 0
+			G5 = 0;
+		end
+
+		F4temp = G5comp(0.25, eta);
+
+		if G5 > F4temp
+			G5 = F4temp;
+		end
+
+		Scale = 10 * log10(M^5.5 * h * Dbar_h * L / r^2);
+
+		SPL_BLUNT(i) = G4 + G5 + Scale;
+	end
+end
+
 % Subroutine LBLVS
 function SPL_LBL = LBL_VS(alpha_star, c, U, f, Theta, Phi, L, r, visc, c0)
 	% Calculates SPL for LBL-VS noise
@@ -102,6 +356,8 @@ end
 % Subroutine TBLTE
 % Look, it's a long boi...
 function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, ... Itrip, Theta, Phi, L, r, visc, c0)
+	% Calculates SPL for TBL-TE noise
+
 	% SPL vectors for each mechanism
 	SPL_TBL = zeros(size(f));
 	SPL_P = zeros(size(f));
@@ -274,5 +530,42 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, ... Itr
 		P4 = 10^(SPL_ALPH(i) / 10);
 
 		SPL_TBL(i) = 10 * log10(P1 + P2 + P4);
+	end
+end
+
+% Subroutine TIPNOIS
+function SPL_TIP = tip_noise(alpha_tip, alprat, c, U, f, Theta, Phi, r, ...
+	visc, c0, tip_round)
+	% Calculates tip noise
+	SPL_TIP = zeros(size(f));
+	alptipp = alpha_tip * alprat;
+	M = U / c0;
+
+	Dbar_h = direct_h(M, Theta, Phi);
+
+	if tip_round
+		L = 0.008 * alptipp * c;
+	else
+		if abs(alptipp) <= 2
+			L = (0.023 + 0.0169 * alptipp) * c;
+		else
+			L = (0.0378 + 0.0095 * alptipp) * c;
+		end
+	end
+
+	MM = (1 + 0.036 * alptipp) * M;
+	UM = MM * c0;
+
+	term = M * M * MM^3 * L^2 * Dbar_h / r^2;
+
+	if term ~= 0
+		Scale = 10 * log10(term);
+	else
+		Scale = 0;
+	end
+
+	for i = 1:size(f)
+		stpp = f(i) * L / UM;
+		SPL_TIP(i) = 126 - 30.5 * (log10(stpp) + 0.3)^2 + Scale;
 	end
 end

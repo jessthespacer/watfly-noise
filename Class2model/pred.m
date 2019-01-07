@@ -11,7 +11,7 @@ clear all; clc; close all;
 % Appendix D. Some variable names have changed and code has been vectorized
 % where possible.
 
-% Num. blade segments (default)
+% Num. blade segments
 Nseg = 10;
 
 % Create 1/3 octave centered frequency array
@@ -81,92 +81,100 @@ Itip = false;
 
 % --- Initialize your own settings here ---
 
+Nseg = 1
+c = 0.3048;
+L = 0.4572;
+r = 1.22;
+Theta = 90;
+Phi = 90;
+alpha_star = 1.516;
+U = 71.3;
+Itrip = 0;
+Ilam = 1;
+Iturb = 1;
+
+Theta *= pi / 180;
+Phi *= pi / 180;
+
 % Initialize aeroacoustic parameter/result arrays for each frequency
-% Strouhal number
-St = zeros(size(f));
+size_parray = [Nseg, size(f, 2)];
 
 % SPL from laminar BL vortex shedding
-SPL_LBL = zeros(size(f));
+SPL_LBL = zeros(size_parray);
 
 % SPL from turbulent BL vortex shedding
-SPL_TBL = zeros(size(f));
+SPL_TBL = zeros(size_parray);
 
 % SPL from TBL-TE
-SPL_P = zeros(size(f));
+SPL_P = zeros(size_parray);
 
 % SPL from TBL-TE
-SPL_S = zeros(size(f));
+SPL_S = zeros(size_parray);
 
 % SPL from TBL-TE
-SPL_ALPH = zeros(size(f));
+SPL_ALPH = zeros(size_parray);
 
 % SPL from tip noise
-SPL_TIP = zeros(size(f));
+SPL_TIP = zeros(size_parray);
 
 % SPL from blunt noise
-SPL_BLUNT = zeros(size(f));
+SPL_BLUNT = zeros(size_parray);
 
 % Total SPL matrix
-SPL = zeros(7, size(f)(2));
+SPL = zeros(7, size(f, 2));
 
 % Pressures for TBL-TE
-P = zeros(7, size(f)(2));
+P = zeros(7, size(f, 2));
 
 % Prediction code
 % Iterate over all segments to predict SPL
-for i = 1:Nseg
+for I = 1:Nseg
 	if Ilam
-		SPL_LBL(i, :) = LBL_VS(alpha_star(i), c(i), U(i), f, Theta(i), ...
-			Phi(i), L(i), r(i), visc, c0);
+		SPL_LBL(I, :) = LBL_VS(alpha_star(I), c(I), U(I), f, Theta(I), ...
+			Phi(I), L(I), r(I), visc, c0, Itrip);
 	end
 
 	if Iturb
-	% TODO
-		[SPL_P(i, :), SPL_S(i, :), SPL_ALPH(i, :), SPL_TBL(i, :)] = ...
-		TBL_TE(alpha_star(i), c(i), U(i), f, Itrip, Theta(i), Phi(i), ...
-			L(i), r(i), visc, c0);
+		[SPL_P(I, :), SPL_S(I, :), SPL_ALPH(I, :), SPL_TBL(I, :)] = ...
+		TBL_TE(alpha_star(I), c(I), U(I), f, Itrip, Theta(I), Phi(I), ...
+			L(I), r(I), visc, c0);
 	end
 
 	if Iblunt
-	% TODO, TODO, TODO TODO TODO TODO TODOOOOOOOO TODO DO DO
-		SPL_BLUNT(i, :) = BLUNT(alpha_star(i), c(i), U(i), f, Itrip, ...
-			Theta(i), 	Phi(i), L(i), r(i), h(i), Psi(i), visc, c0);
-	end
-end
-
-if Itip
-	% TODO, TODO, TODO TODO TODO TODO TODOOOOOOOO!
-	% Must ensure that only last segment is used
-	SPL_TIP(end) = TIP_NOISE(alpha_tip, alprat, c(end), U(end), f, Theta, ...
-		Phi, r(end), visc, c0, tip_round);
+		SPL_BLUNT(I, :) = blunt(alpha_star(I), c(I), U(I), f, Itrip, ...
+			Theta(I), Phi(I), L(I), r(I), h(I), Psi(I), visc, c0);
 	end
 
-% Pressure contribution, use mean-square pressure basis (vectorized)
-if Ilam
-	P(5, :) += 10.^(SPL_LBL / 10);
-end
+	% Iterate over all frequencies
+	for J = 1:size(f, 2)
+		% Add segment's contribution on mean-square pressure basis
 
-if Iturb
-	P(1, :) += 10.^(SPL_P / 10);
-	P(2, :) += 10.^(SPL_S / 10);
-	P(3, :) += 10.^(SPL_ALPH / 10);
-end
+		if Ilam
+			P(5, J) += 10^(SPL_LBL(I, J) / 10);
+		end
 
-if Iblunt
-	P(6, :) += 10.^(SPL_BLUNT / 10);
-end
+		if Iturb
+			P(1, J) += 10^(SPL_P(I, J) / 10);
+			P(2, J) += 10^(SPL_S(I, J) / 10);
+			P(3, J) += 10^(SPL_ALPH(I, J) / 10);
+		end
 
-if Itip 
-	% Just the tip...
-	P(7, end) += 10.^(SPL_TIP / 10);
-end
+		if Iblunt
+			P(6, J) += 10^(SPL_BLUNT(I, J) / 10);
+		end
 
-% Compute total pressure for all mechanisms for each segment; this basically
-% flattens the matrix
-P(4, :) = sum([P([1:3 5:6], :)]);
+		% Tip noise for last segment only
+		if Itip && I == Nseg
+			P(7, J) += 10^(SPL_TIP(I, J) / 10);
+		end
+
+		% Compute total pressure for the segment for all mechanisms
+		P(4, J) = sum(P([1 2 3 5 6 7], J));
+	end
+end
 
 % For segments/freqs where P != 0, convert to SPL (vectorized)
 SPL(P ~= 0) = 10 .* log10(P(P ~= 0));
 
-% DISCLAIMER: Limitations of this code include not knowing the mean airspeed
+% DISCLAIMER: Limitations of this code include not knowing the airspeed
 % velocity of an unladen swallow, whether African or European.
