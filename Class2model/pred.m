@@ -81,20 +81,34 @@ Itip = false;
 
 % --- Initialize your own settings here ---
 
-Nseg = 1
-c = 0.3048;
-L = 0.4572;
-r = 1.22;
-Theta = 90;
-Phi = 90;
-alpha_star = 1.516;
-U = 71.3;
-Itrip = 0;
-Ilam = 1;
-Iturb = 1;
+% Case I
+% Nseg = 1
+% c = 0.3048;
+% L = 0.4572;
+% r = 1.22;
+% Theta = 90;
+% Phi = 90;
+% alpha_star = 1.516;
+% U = 71.3;
+% Itrip = 0;
+% Ilam = 1;
+% Iturb = 1;
 
-Theta *= pi / 180;
-Phi *= pi / 180;
+% Case II
+Nseg = 10;
+c = ones(1, Nseg) * 0.1524;
+L = ones(1, Nseg) * 0.0305;
+r = ones(1, Nseg) * 1.22;
+Theta = ones(1, Nseg) * 90;
+Phi = ones(1, Nseg) * 90;
+alpha_star = ones(1, Nseg) * 5.4;
+alpha_tip = ones(1, Nseg) * 7.7;
+U = ones(1, Nseg) * 71.3;
+Itrip = 1;
+Ilam = 0;
+Iturb = 1;
+Itip = 1;
+tip_round = true;
 
 % Initialize aeroacoustic parameter/result arrays for each frequency
 size_parray = [Nseg, size(f, 2)];
@@ -136,7 +150,7 @@ for I = 1:Nseg
 
 	if Iturb
 		[SPL_P(I, :), SPL_S(I, :), SPL_ALPH(I, :), SPL_TBL(I, :)] = ...
-		TBL_TE(alpha_star(I), c(I), U(I), f, Itrip, Theta(I), Phi(I), ...
+			TBL_TE(alpha_star(I), c(I), U(I), f, Itrip, Theta(I), Phi(I), ...
 			L(I), r(I), visc, c0);
 	end
 
@@ -175,6 +189,20 @@ end
 
 % For segments/freqs where P != 0, convert to SPL (vectorized)
 SPL(P ~= 0) = 10 .* log10(P(P ~= 0));
+
+% Print results table
+format short g;
+% results = [f' SPL(1, :)' SPL(3, :)' SPL(5, :)' SPL(7, :)' SPL(4, :)']
+results = [f; SPL]'
+
+% Columns:
+% 1: Presure side TBL
+% 2: Suction side TBL
+% 3: Separation side TBL
+% 4: Total
+% 5: LBL
+% 6: Blunt
+% 7: Tip
 
 % DISCLAIMER: Limitations of this code include not knowing the airspeed
 % velocity of an unladen swallow, whether African or European.

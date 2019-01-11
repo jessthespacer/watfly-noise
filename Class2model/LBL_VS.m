@@ -38,9 +38,9 @@ function SPL_LBL = LBL_VS(alpha_star, c, U, f, Theta, Phi, L, r, visc, c0, ...
 
 	% Compute reference Reynolds number
 	if alpha_star <= 3
-		Re0 = 10.^(0.215 .* alpha_star(alpha_star <= 3) + 4.978);
+		Re0 = 10.^(0.215 .* alpha_star + 4.978);
 	else
-		Re0 = 10.^(0.12 .* alpha_star(alpha_star > 3) + 5.263);
+		Re0 = 10.^(0.12 .* alpha_star + 5.263);
 	end
 
 	% Compute peak scaled spectrum level
@@ -67,9 +67,12 @@ function SPL_LBL = LBL_VS(alpha_star, c, U, f, Theta, Phi, L, r, visc, c0, ...
 	stprim = f * deltaP / U;
 
 	% Compute G1 directivity function
-	for i = 1:size(f, 2)
+	for I = 1:size(f, 2)
+		% Compute scaled SPLs for each Strouhal number
+		stprim(I) = f(I) * deltaP / U;
+
 		% Compute Strouhal number ratio
-		E = stprim(i) / stpkprm;
+		E = stprim(I) / stpkprm;
 
 		if E < 0.5974
 			G1 = 39.8 * log10(E) - 11.12;
@@ -84,6 +87,6 @@ function SPL_LBL = LBL_VS(alpha_star, c, U, f, Theta, Phi, L, r, visc, c0, ...
 		end
 
 		% Compute scaled SPL for each Strouhal number
-		SPL_LBL(i) = G1 + G2 + G3 + Scale;
+		SPL_LBL(I) = G1 + G2 + G3 + Scale;
 	end
 end

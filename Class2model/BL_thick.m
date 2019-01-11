@@ -1,5 +1,5 @@
 % Subroutine THICK
-function [deltaP, dstrp, dstrs] = BL_thick(c, U, alpha_star, Itrip, c0, visc)
+function [deltaP, dstrs, dstrp] = BL_thick(c, U, alpha_star, Itrip, c0, visc)
 	% Compute boundary layer thickness
 	M = U / c0;
 	Re = U * c / visc;
@@ -16,10 +16,12 @@ function [deltaP, dstrp, dstrs] = BL_thick(c, U, alpha_star, Itrip, c0, visc)
 	% Compute zero AOA displacement thickness
 	if Itrip == 1 || Itrip == 2
 		if Re <= 0.3E+06
-			dstr0 = 0.0601 * Re^(-0.114 * c);
+			dstr0 = 0.0601 * Re^(-0.114) * c;
 		else
-			dstr0 = 10^(3.411 - 1.5397 * log10(Re) + 0.1059 * (log10(Re))^2)*c;
+			dstr0 = 10^(3.411 - 1.5397 * log10(Re) + ...
+				0.1059 * (log10(Re))^2) * c;
 		end
+
 		if Itrip == 2
 			dstr0 *= 0.6;
 		end
@@ -35,7 +37,7 @@ function [deltaP, dstrp, dstrs] = BL_thick(c, U, alpha_star, Itrip, c0, visc)
 
 	% Suction side displcement thickness
 	if Itrip == 1
-		if alpha_star <= 5
+		if alpha_star <= 5.0
 			dstrs = 10^(0.0679 * alpha_star) * dstr0;
 		elseif alpha_star <= 12.5
 			dstrs = 0.381 * 10^(0.1516 * alpha_star) * dstr0;
