@@ -9,7 +9,7 @@ numBlades = 5
 directory = "Inputs"	# Set input directory
 
 # --- Program run flags ---
-runCalcs = False
+runCalcs = True
 postProcess = True
 writeToCSV = True
 
@@ -43,7 +43,7 @@ if postProcess:
 				noise.append([
 					list(		# Convert map object to list
 						map(	# Convert each element to float
-							float, x.split()
+							float, x.split()	# Remove spaces
 						)
 					) for x in data])
 
