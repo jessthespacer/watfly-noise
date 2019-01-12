@@ -29,7 +29,7 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 
 	% Compute directivity functions
 	Dbar_h = direct_h(M, Theta, Phi);
-	Dbar_l = direct_l(M, Theta, Phi);	% TODO: Implement
+	Dbar_l = direct_l(M, Theta, Phi);
 
 	% Calculate Re based on pressure and suction displacement thicknesses
 	rdstrs = dstrs * U / visc;
@@ -48,11 +48,10 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 
 	st1prim = (st1 + st2) / 2;
 
-	a0 = a0comp(Re);		% TODO: Implement
-	a02 = a0comp(3 * Re);	% TODO: Implement
+	a0 = a0comp(Re);
+	a02 = a0comp(3 * Re);
 
 	% Evaluate minimum and maximum 'A' curves at A0
-	% TODO: Implement
 	amin_a0 = amin(a0);
 	amax_a0 = amax(a0);
 	amin_a02 = amin(a02);
@@ -72,7 +71,6 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 	end
 
 	% Evaluate minimum and maximum 'B' curves at B0
-	% TODO: Implement
 	bmin_b0 = bmin(b0);
 	bmax_b0 = bmax(b0);
 
@@ -82,9 +80,9 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 	% For each center frequency, compute 'A' prediction for pressure side
 	stpeak = st1;
 
-	for i = 1:size(f, 2)
-		stp(i) = f(i) * dstrp / U;
-		a = log10(stp(i) / stpeak);
+	for I = 1:size(f, 2)
+		stp(I) = f(I) * dstrp / U;
+		a = log10(stp(I) / stpeak);
 		amin_a = amin(a);
 		amax_a = amax(a);
 		aa = amin_a + ara0 * (amax_a - amin_a);
@@ -103,13 +101,13 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 			delk1 = 0.0;
 		end
 		
-		SPL_P(i) = aa + K1 - 3 + ...
+		SPL_P(I) = aa + K1 - 3 + ...
 			10 * log10(dstrp * M^5 * Dbar_h * L / r^2) + delk1;
 
-		Gamma = 27.094 * M + 3.31;
-		Beta = 72.65 * M + 10.74;
-		Gamma0 = 23.43 * M + 4.651;
-		Beta0 = -34.19 * M - 13.82;
+		Gamma 	=  27.094 * M + 3.31;
+		Beta 	=  72.650 * M + 10.74;
+		Gamma0 	=  23.430 * M + 4.651;
+		Beta0 	= -34.190 * M - 13.82;
 
 		if alpha_star <= (Gamma0 - Gamma)
 			K2 = -1000;
@@ -117,63 +115,64 @@ function [SPL_P, SPL_S, SPL_ALPH, SPL_TBL] = TBL_TE(alpha_star, c, U, f, Itrip, 
 			K2 = sqrt(Beta^2 - (Beta / Gamma)^2 * (alpha_star - Gamma0)^2) ...
 				+ Beta0;
 		else
-			K2 = -12;
+			K2 = -12.0;
 		end
 
-		K2 = K2 + K1;
+		K2 += K1;
 
-		sts(i) = f(i) * dstrs / U;
+		sts(I) = f(I) * dstrs / U;
 		
 		% Check for 'A' computation for suction side
 		xcheck = Gamma0;
 		computeAOAcont = false;
 
-		if alpha_star >= xcheck || alpha_star > 12.5
+		if ((alpha_star >= xcheck) || (alpha_star > 12.5))
 			computeAOAcont = true;
 		end
 		if !computeAOAcont
-			a = log10(sts(i) / st1prim);
+			a = log10(sts(I) / st1prim);
 			amin_a = amin(a);
 			amax_a = amax(a);
 			aa = amin_a + ara0 * (amax_a - amin_a);
 
-			SPL_S(i) = aa + K1 - 3 + 10^log10(dstrs * M^5 * Dbar_h * L / r^2);
+			SPL_S(I) = aa + K1 - 3 + ...
+				10 * log10(dstrs * M^5 * Dbar_h * L / r^2);
 
 			% Check for 'B' computation for suction side
-			b = abs(log10(sts(i) / st2));
+			b = abs(log10(sts(I) / st2));
 			bmin_b = bmin(b);
 			bmax_b = bmax(b);
 			bb = bmin_b + brb0 * (bmax_b - bmin_b);
-			SPL_ALPH(i) = bb + K2 + 10 * log10(dstrs * M^5 * Dbar_h * L / r^2);
+			SPL_ALPH(I) = bb + K2 + 10 * log10(dstrs * M^5 * Dbar_h * L / r^2);
 		else
 			% Drop 'A' computation
-			SPL_S(i) = 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
-			SPL_P(i) = 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
+			SPL_S(I) = 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
+			SPL_P(I) = 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
 
-			b = abs(log10(sts(i) / st2));
+			b = abs(log10(sts(I) / st2));
 			amin_b = amin(b);
 			amax_b = amax(b);
 			bb = amin_b + ara02 * (amax_b - amin_b);
 
-			SPL_ALPH(i) = bb + K2 + 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
+			SPL_ALPH(I) = bb + K2 + 10 * log10(dstrs * M^5 * Dbar_l * L / r^2);
 		end
 
 		% Sum all contributions from 'A' and 'B' on both pressure and suction
 		% sides on a mean-square pressure basis
-		if SPL_P(i) < -100
-			SPL_P(i) = -100;
+		if SPL_P(I) < -100
+			SPL_P(I) = -100;
 		end
-		if SPL_S(i) < -100
-			SPL_S(i) = -100;
+		if SPL_S(I) < -100
+			SPL_S(I) = -100;
 		end
-		if SPL_ALPH(i) < -100
-			SPL_ALPH(i) = -100;
+		if SPL_ALPH(I) < -100
+			SPL_ALPH(I) = -100;
 		end
 
-		P1 = 10^(SPL_P(i) / 10);
-		P2 = 10^(SPL_S(i) / 10);
-		P4 = 10^(SPL_ALPH(i) / 10);
+		P1 = 10^(SPL_P(I) / 10);
+		P2 = 10^(SPL_S(I) / 10);
+		P4 = 10^(SPL_ALPH(I) / 10);
 
-		SPL_TBL(i) = 10 * log10(P1 + P2 + P4);
+		SPL_TBL(I) = 10 * log10(P1 + P2 + P4);
 	end
 end

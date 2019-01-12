@@ -1,0 +1,28 @@
+Manual debug log:
+
+Functions checked:
+BL_thick
+LBL_VS
+direct_h
+direct_l
+TBL_TE
+amin
+amax
+bmin
+bmax
+a0comp
+
+Currently checking:
+
+To be checked:
+
+
+
+Predictions:
+
+Laminar: OK
+Press TBL: Switched?
+Suction TBL: Switched?
+Separation: Wrong
+Bluntness:
+Tip:
